@@ -17,7 +17,6 @@ void anneal(const std::vector<std::vector<T>> costMatrix, std::vector<int>& path
     std::mt19937 rng(rd());
     std::uniform_int_distribution<> indexDist(0, path.size() - 1);
 
-    double probability = 0.2;
     bool acceptCondition = false;
     double iter = 1;
     T bestCost = calculateCost(bestPath, costMatrix);
@@ -104,13 +103,10 @@ int main(int argc, char* argv[]) {
     }
 
     std::vector<std::vector<double>> costMatrix = loadData(argv[1]);
-    std::cout << "chuj" << std::endl;
 
     std::string destFolder = argv[2];
-    std::cout << "dupa0" << std::endl;
 
     int size = costMatrix.size();
-    std::cout << "dupa1" << std::endl;
 
     std::vector<int> path = initialGuess(size);
     std::vector<int> bestPath = path;
