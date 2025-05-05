@@ -84,7 +84,7 @@ std::vector<int> initialGuess(int size) {
     return permutation;
 };
 
-void displaycostMatrix(std::vector<std::vector<double>> costMatrix) {
+void displayCostMatrix(std::vector<std::vector<double>> costMatrix) {
     for (const auto& row : costMatrix) {
         for (const auto& value : row) {
             std::cout << value << " ";

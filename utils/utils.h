@@ -21,7 +21,7 @@ T calculateCost(const std::vector<int>& permutation,
 }
 std::vector<int> initialGuess(int size);
 
-void displaycostMatrix(std::vector<std::vector<double>> costMatrix);
+void displayCostMatrix(std::vector<std::vector<double>> costMatrix);
 
 void saveResult(std::vector<int> bestPath, double cost, std::string title, std::string fileLocation);
 
