@@ -1,3 +1,6 @@
+#include <json/reader.h>
+#include <json/value.h>
+
 #include <algorithm>
 #include <chrono>
 #include <cmath>
@@ -17,49 +20,63 @@ double calculateDistanceBetweenNodes(Node a, Node b) {
 }
 
 std::vector<std::vector<double>> loadData(std::string filename) {
-    //   std::cout << "Loading file: " << filename << std::endl;
-    std::string filePath = std::filesystem::current_path().string() + "/" + filename;
-
-    // std::cout << "Full file path: " << filePath << std::endl;
-
-    std::ifstream file(filePath);
-
+    std::ifstream file(filename, std::ifstream::binary);
     if (!file.is_open()) {
-        std::cerr << "Error: file not found at " << filePath << std::endl;
-        return {};
+        throw std::runtime_error("Cannot open file: " + filename);
     }
 
-    std::vector<Node> nodes;
-    std::string line;
-    bool readingNodes = false;
-    while (std::getline(file, line)) {
-        if (line == "NODE_COORD_SECTION") {
-            readingNodes = true;
-            continue;
-        }
-        if (line == "EOF") {
-            break;
-        }
-        if (readingNodes) {
-            std::istringstream iss(line);
-            int tempId;
-            double tempX, tempY;
-            if (!(iss >> tempId >> tempX >> tempY)) {
-                std::cerr << "Error: malformed line: " << line << std::endl;
-                continue;
-            }
-            nodes.push_back(Node(tempId, tempX, tempY));
-        }
+    Json::Reader reader;
+    Json::Value root;
+
+    if (!reader.parse(file, root, false)) {
+        throw std::runtime_error("Failed to parse JSON");
     }
 
-    std::vector<std::vector<double>> costMatrix(nodes.size(), std::vector<double>(nodes.size(), 0));
-    for (int i = 0; i < nodes.size(); i++) {
-        for (int j = 0; j < nodes.size(); j++) {
-            costMatrix[i][j] = calculateDistanceBetweenNodes(nodes[i], nodes[j]);
+    if (!root.isMember("travel_times") || !root["travel_times"].isArray()) {
+        throw std::runtime_error("\"travel_times\" field is missing or not an array");
+    }
+
+    std::vector<std::vector<double>> costMatrix;
+
+    const Json::Value& travelArray = root["travel_times"];
+    for (const auto& row : travelArray) {
+        std::vector<double> travelRow;
+        for (const auto& val : row) {
+            travelRow.push_back(val.asDouble());
         }
+        costMatrix.push_back(travelRow);
     }
 
     return costMatrix;
+}
+
+std::vector<std::vector<double>> loadTimeWindows(std::string filename) {
+    std::ifstream file(filename, std::ifstream::binary);
+    if (!file.is_open()) {
+        throw std::runtime_error("Cannot open file: " + filename);
+    }
+
+    Json::Reader reader;
+    Json::Value root;
+
+    if (!reader.parse(file, root, false)) {
+        throw std::runtime_error("Failed to parse JSON");
+    }
+
+    if (!root.isMember("travel_times") || !root["travel_times"].isArray()) {
+        throw std::runtime_error("\"travel_times\" field is missing or not an array");
+    }
+
+    std::vector<std::vector<double>> timeWindows;
+    const Json::Value& timeWindowsArray = root["time_windows"];
+    for (const auto& row : timeWindowsArray) {
+        std::vector<double> timeWindowsRow;
+        for (const auto& val : row) {
+            timeWindowsRow.push_back(val.asDouble());
+        }
+        timeWindows.push_back(timeWindowsRow);
+    }
+    return timeWindows;
 }
 
 template <typename T>
