@@ -120,6 +120,6 @@ int main(int argc, char* argv[]) {
     // for (const auto& i : bestPath) {
     //     std::cout << i << " ";
     // }
-    std::cout << calculateCost(bestPath, costMatrix);
+    std::cout << calculateCost(bestPath, costMatrix) << std::endl;
     return 0;
 }
