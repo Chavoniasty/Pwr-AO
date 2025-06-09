@@ -17,45 +17,65 @@ double calculateDistanceBetweenNodes(Node a, Node b) {
 }
 
 std::vector<std::vector<double>> loadData(std::string filename) {
-    //   std::cout << "Loading file: " << filename << std::endl;
     std::string filePath = std::filesystem::current_path().string() + "/" + filename;
-
-    // std::cout << "Full file path: " << filePath << std::endl;
+    std::cout << "Full file path: " << filePath << std::endl;
 
     std::ifstream file(filePath);
-
     if (!file.is_open()) {
         std::cerr << "Error: file not found at " << filePath << std::endl;
         return {};
     }
 
-    std::vector<Node> nodes;
     std::string line;
-    bool readingNodes = false;
+    int dimension = -1;
+    bool inMatrix = false;
+    std::vector<double> values;
+
     while (std::getline(file, line)) {
-        if (line == "NODE_COORD_SECTION") {
-            readingNodes = true;
+        // Trim whitespace from line
+        line.erase(0, line.find_first_not_of(" \t\r\n"));
+        line.erase(line.find_last_not_of(" \t\r\n") + 1);
+
+        if (line.empty()) continue;
+
+        if (line.find("DIMENSION") != std::string::npos) {
+            size_t pos = line.find_first_of(":=");
+            if (pos != std::string::npos) {
+                std::string value = line.substr(pos + 1);
+                value.erase(0, value.find_first_not_of(" \t"));  // Trim leading spaces
+                dimension = std::stoi(value);
+                std::cout << "Parsed DIMENSION: " << dimension << std::endl;
+            }
+        } else if (line.find("EDGE_WEIGHT_SECTION") != std::string::npos) {
+            inMatrix = true;
             continue;
-        }
-        if (line == "EOF") {
+        } else if (line.find("EOF") != std::string::npos) {
             break;
         }
-        if (readingNodes) {
+
+        if (inMatrix) {
             std::istringstream iss(line);
-            int tempId;
-            double tempX, tempY;
-            if (!(iss >> tempId >> tempX >> tempY)) {
-                std::cerr << "Error: malformed line: " << line << std::endl;
-                continue;
+            double num;
+            while (iss >> num) {
+                values.push_back(num);
             }
-            nodes.push_back(Node(tempId, tempX, tempY));
         }
     }
 
-    std::vector<std::vector<double>> costMatrix(nodes.size(), std::vector<double>(nodes.size(), 0));
-    for (int i = 0; i < nodes.size(); i++) {
-        for (int j = 0; j < nodes.size(); j++) {
-            costMatrix[i][j] = calculateDistanceBetweenNodes(nodes[i], nodes[j]);
+    if (dimension == -1) {
+        throw std::runtime_error("DIMENSION not found in file.");
+    }
+
+    if (values.size() != static_cast<size_t>(dimension * dimension)) {
+        throw std::runtime_error("Matrix size mismatch: expected " +
+                                 std::to_string(dimension * dimension) + ", got " +
+                                 std::to_string(values.size()));
+    }
+
+    std::vector<std::vector<double>> costMatrix(dimension, std::vector<double>(dimension));
+    for (int i = 0; i < dimension; ++i) {
+        for (int j = 0; j < dimension; ++j) {
+            costMatrix[i][j] = values[i * dimension + j];
         }
     }
 
