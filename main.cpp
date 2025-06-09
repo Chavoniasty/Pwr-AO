@@ -10,7 +10,7 @@
 #include "./utils/Node.h"
 #include "./utils/utils.h"
 
-#define SAVE_RESULTS 1
+#define SAVE_RESULTS 0
 #define SYNC_INTERVAL 1000
 
 template <typename T>
@@ -25,7 +25,8 @@ void anneal(
     std::vector<std::vector<int>>& bestPaths,
     std::vector<T>& bestCosts,
     int numThreads,
-    T& globalBestCost
+    T& globalBestCost,
+    int maxIterations
 ) { 
     std::uniform_real_distribution<> dist(0.0f, 1.0f);
     std::random_device rd;
@@ -39,7 +40,7 @@ void anneal(
     T bestCost = calculateCost(bestPath, costMatrix);
     T prevCost = calculateCost(path, costMatrix);
     T currentCost = calculateCost(path, costMatrix);
-    while (iter < 100000) {
+    while (iter < maxIterations) {
         int index1 = indexDist(rng);
         int index2 = indexDist(rng);
         std::swap(path[index1], path[index2]);
@@ -131,7 +132,8 @@ void startAnnealing(
     std::vector<int>& bestPath,
     std::string destFolder,
     T& globalBestCostOut,
-    std::vector<int>& globalBestPathOut
+    std::vector<int>& globalBestPathOut,
+    int maxIterations
 ) {
     T temperature = getInitialTemperature(costMatrix, path);
     double temperatureStep = (0.9998 - 0.998) / 5;
@@ -147,7 +149,7 @@ void startAnnealing(
     T globalBestCost = calculateCost(bestPath, costMatrix);
 
     //omp_set_num_threads(6);
-#pragma omp parallel shared(bestPaths, bestCosts, globalBestPath, globalBestCost)
+#pragma omp parallel shared(bestPaths, bestCosts, globalBestPath, globalBestCost, maxIterations)
     {
         #pragma omp single
         {
@@ -163,7 +165,7 @@ void startAnnealing(
 
         anneal(costMatrix, localPath, localBestPath, globalBestPath,
             threadTemperature, results, threadAlpha,
-            bestPaths, bestCosts, numThreads, globalBestCost);
+            bestPaths, bestCosts, numThreads, globalBestCost, maxIterations);
 
         int threadNum = omp_get_thread_num();
 
@@ -179,9 +181,14 @@ void startAnnealing(
 }
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) {
-        std::cout << "Usage: ./a.out <string>" << std::endl;
+    if (argc < 3) {
+        std::cout << "Usage: ./a.out <input_file> <output_folder> [max_iterations]" << std::endl;
         return 1;
+    }
+
+    int maxIterations = 100000;
+    if (argc >= 4) {
+        maxIterations = std::stoi(argv[3]);
     }
 
     std::vector<std::vector<double>> costMatrix = loadData(argv[1]);
@@ -199,7 +206,7 @@ int main(int argc, char* argv[]) {
     std::vector<int> finalBestPath;
     double finalBestCost = 0.0;
 
-    startAnnealing(costMatrix, path, bestPath, destFolder, finalBestCost, finalBestPath);
+    startAnnealing(costMatrix, path, bestPath, destFolder, finalBestCost, finalBestPath, maxIterations);
     auto end = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     std::cout << "Duration: " << duration.count() << "ms" << std::endl;

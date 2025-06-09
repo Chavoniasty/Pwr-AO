@@ -14,18 +14,17 @@ def load_data(filename):
 
 plt.figure(figsize=(12, 6))
 
-# 🔁 Wczytaj pliki thread0.txt do thread7.txt z folderu 'res/'
 for i in range(8):
-    filename = f"res{6}/thread{i}.txt"
+    filename = f"res{8}/thread{i}.txt"
     if os.path.exists(filename):
         iterations, costs = load_data(filename)
-        plt.plot(iterations, costs, label=f"Wątek {i}")
+        plt.plot(iterations, costs, label=f"Wątek {i+1}")
     else:
         print(f"⚠️ Plik nie znaleziony: {filename}")
 
 plt.xlabel("Iteracja")
 plt.ylabel("Koszt")
-plt.title("Wykres kosztu – każdy wątek z jednego uruchomienia (6 wątków)")
+plt.title("Wykres kosztu – każdy wątek z jednego uruchomienia (8 wątków)")
 plt.legend()
 plt.grid(True)
 plt.tight_layout()
